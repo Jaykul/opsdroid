@@ -21,7 +21,7 @@
 ---
 
 <p align="center">
-  <a href="https://docs.opsdroid.dev/en/stable/quickstart.html">Quick Start</a> •
+  [Quick Start](./quickstart.md) •
   <a href="https://docs.opsdroid.dev">Documentation</a> •
   <a href="https://playground.opsdroid.dev">Playground</a> •
   <a href="https://medium.com/opsdroid">Blog</a> •
