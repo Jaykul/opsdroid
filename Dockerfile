@@ -1,9 +1,11 @@
-FROM python:3.9.6-alpine3.14 as builder
+ARG PYTHON_VERSION=3.9.10
+ARG ALPINE_VERSION=3.15
+FROM python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} as builder
 LABEL maintainer="Jacob Tomlinson <jacob@tomlinson.email>"
 
 WORKDIR /usr/src/app
 
-ARG EXTRAS=[all,connector_matrix_e2e]
+ARG PIP_EXTRAS=[all,connector_matrix_e2e]
 ENV DEPS_DIR=/usr/src/app/deps
 
 # Copy source
@@ -32,18 +34,19 @@ RUN apk update \
     setuptools-scm \
     wheel \
     && mkdir -p "${DEPS_DIR}" \
-    && pip download --use-feature=in-tree-build --prefer-binary -d ${DEPS_DIR} .${EXTRAS} \
+    && pip download --prefer-binary -d ${DEPS_DIR} .${PIP_EXTRAS} \
     && pip wheel -w ${DEPS_DIR} ${DEPS_DIR}/*.tar.gz \
     && count=$(ls -1 ${DEPS_DIR}/*.zip 2>/dev/null | wc -l) && if [ $count != 0 ]; then pip wheel -w ${DEPS_DIR} ${DEPS_DIR}/*.zip ; fi \
     && python -m build --wheel --outdir ${DEPS_DIR}
 
-FROM python:3.9.6-alpine3.14 as runtime
+FROM python:${PYTHON_VERSION}-alpine${ALPINE_VERSION} as runtime
 LABEL maintainer="Jacob Tomlinson <jacob@tomlinson.email>"
 LABEL maintainer="Rémy Greinhofer <remy.greinhofer@gmail.com>"
 
 WORKDIR /usr/src/app
 
-ARG EXTRAS=[all,connector_matrix_e2e]
+ARG APK_EXTRAS=git
+ARG PIP_EXTRAS=[all,connector_matrix_e2e]
 ENV DEPS_DIR=/usr/src/app/deps
 
 # Copy the pre-built dependencies.
@@ -51,11 +54,11 @@ COPY --from=builder ${DEPS_DIR}/*.whl ${DEPS_DIR}/
 
 # Install Opsdroid using only pre-built dependencies.
 RUN apk add --no-cache \
-    git \
+    ${APK_EXTRAS} \
     olm \
     libzmq \
     && pip install --no-cache-dir --no-index -f ${DEPS_DIR} \
-    $(find ${DEPS_DIR} -type f -name opsdroid-*-any.whl)${EXTRAS} \
+    $(find ${DEPS_DIR} -type f -name opsdroid-*-any.whl)${PIP_EXTRAS} \
     && rm -rf /tmp/* /var/tmp/* ${DEPS_DIR}/* \
     && adduser -u 1001 -S -G root opsdroid
 
